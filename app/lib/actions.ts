@@ -27,19 +27,37 @@ export async function authenticate(formData: FormData) {
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
-  const user = await sql`SELECT * FROM users WHERE username=${username}`;
-  if (user.rows.length === 0) return 'User not found';
+  try {
+    const user = await sql`SELECT * FROM users WHERE username=${username}`;
+    
+    // If user not found, reload page (fail silently)
+    if (user.rows.length === 0) {
+      redirect('/');
+    }
 
-  const match = await bcrypt.compare(password, user.rows[0].password_hash);
-  if (!match) return 'Invalid credentials';
+    // If password incorrect, reload page
+    const match = await bcrypt.compare(password, user.rows[0].password_hash);
+    if (!match) {
+      redirect('/');
+    }
 
-  const cookieStore = await cookies();
-  cookieStore.set('session', user.rows[0].id, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: '/',
-  });
+    // Success: Set Session Cookie
+    const cookieStore = await cookies();
+    cookieStore.set('session', user.rows[0].id, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: '/',
+    });
+
+  } catch (e) {
+    // We must re-throw NEXT_REDIRECT errors so the redirect actually happens
+    if ((e as Error).message === 'NEXT_REDIRECT') {
+      throw e;
+    }
+    // Any other error, just reload
+    redirect('/');
+  }
   
   redirect('/dashboard');
 }
@@ -50,59 +68,62 @@ export async function logoutUser() {
   redirect('/');
 }
 
-// --- 2. SANDBOX / DEMO LOGIN ---
+// --- 2. SANDBOX / DEMO LOGIN (Unique Session) ---
 
 export async function loginDemoUser() {
   const cookieStore = await cookies();
   
   try {
-    // Check if demo user exists
-    let userResult = await sql`SELECT id FROM users WHERE username = 'demo_user'`;
-    let userId;
+    // A. AUTO-CLEANUP: Delete demo users older than 24 hours to save DB space
+    // (This runs silently every time someone starts a demo)
+    await sql`
+      DELETE FROM users 
+      WHERE username LIKE 'demo_%' 
+      AND created_at < NOW() - INTERVAL '24 hours'
+    `;
 
-    if (userResult.rows.length === 0) {
-      // A. Create User
-      const hashed = await bcrypt.hash('demo123', 10);
-      const newUser = await sql`
-        INSERT INTO users (username, password_hash) 
-        VALUES ('demo_user', ${hashed}) 
-        RETURNING id
-      `;
-      userId = newUser.rows[0].id;
+    // B. Create a UNIQUE Throwaway Account
+    const timestamp = Date.now();
+    const randomSuffix = Math.floor(Math.random() * 1000);
+    const uniqueUsername = `demo_${timestamp}_${randomSuffix}`;
+    
+    // Create User
+    const hashed = await bcrypt.hash('demo123', 10);
+    const newUser = await sql`
+      INSERT INTO users (username, password_hash) 
+      VALUES (${uniqueUsername}, ${hashed}) 
+      RETURNING id
+    `;
+    const userId = newUser.rows[0].id;
 
-      // B. Create Dummy Banks
-      const chase = await sql`INSERT INTO banks (user_id, name, current_balance) VALUES (${userId}, 'Chase Checking', 4250.00) RETURNING id`;
-      const savings = await sql`INSERT INTO banks (user_id, name, current_balance) VALUES (${userId}, 'Amex Savings', 12000.00) RETURNING id`;
-      const bankId = chase.rows[0].id;
+    // C. SEED DATA (So the dashboard isn't empty)
+    
+    // 1. Create Banks
+    const chase = await sql`INSERT INTO banks (user_id, name, current_balance) VALUES (${userId}, 'Chase Checking', 4250.00) RETURNING id`;
+    const savings = await sql`INSERT INTO banks (user_id, name, current_balance) VALUES (${userId}, 'Amex Savings', 12000.00) RETURNING id`;
+    const bankId = chase.rows[0].id;
 
-      // C. Create Dummy Expense Types (Categories)
-      const typeRes = await sql`INSERT INTO expense_types (user_id, name) VALUES (${userId}, 'Subscriptions') RETURNING id`;
-      const typeId = typeRes.rows[0].id;
-      const typeRentRes = await sql`INSERT INTO expense_types (user_id, name) VALUES (${userId}, 'Housing') RETURNING id`;
-      const typeRentId = typeRentRes.rows[0].id;
+    // 2. Create Categories
+    const subType = await sql`INSERT INTO expense_types (user_id, name) VALUES (${userId}, 'Subscriptions') RETURNING id`;
+    const housingType = await sql`INSERT INTO expense_types (user_id, name) VALUES (${userId}, 'Housing') RETURNING id`;
+    
+    // 3. Create Expenses
+    // Pending items
+    await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${subType.rows[0].id}, 'Netflix', 15.99, 'not-paid', ${new Date().toISOString()})`;
+    await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${housingType.rows[0].id}, 'Rent', 1850.00, 'not-paid', ${new Date(Date.now() + 86400000 * 5).toISOString()})`; 
+    // Completed items
+    await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${subType.rows[0].id}, 'Spotify', 10.99, 'completed', ${new Date().toISOString()})`;
 
-      // D. Create Dummy Expenses
-      // Pending
-      await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${typeId}, 'Netflix', 15.99, 'not-paid', ${new Date().toISOString()})`;
-      await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${typeRentId}, 'Rent', 1850.00, 'not-paid', ${new Date(Date.now() + 86400000 * 5).toISOString()})`; // 5 days out
-      // Completed
-      await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${typeId}, 'Spotify', 10.99, 'completed', ${new Date().toISOString()})`;
+    // 4. Create Future Inbound
+    const date = new Date();
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    await sql`INSERT INTO inbounds (bank_id, amount, date, note) VALUES (${bankId}, 2500.00, ${lastDay.toISOString()}, 'Paycheck')`;
 
-      // E. Create Dummy Inbound (Future Income)
-      // End of month date
-      const date = new Date();
-      const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-      await sql`INSERT INTO inbounds (bank_id, amount, date, note) VALUES (${bankId}, 2500.00, ${lastDay.toISOString()}, 'Paycheck')`;
-
-    } else {
-      userId = userResult.rows[0].id;
-    }
-
-    // Create Session
+    // D. Log them in
     cookieStore.set('session', userId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7, // 1 week
+      maxAge: 60 * 60 * 24, // Session expires in 1 day
       path: '/',
     });
 
