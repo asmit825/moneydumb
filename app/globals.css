@@ -1,26 +1,49 @@
 @import "tailwindcss";
 
+@theme {
+  /* Define our custom Retro colors */
+  --color-retro-black: #050505;
+  --color-retro-green: #33ff00;
+  --color-retro-dim: #1a8000;
+  --color-retro-amber: #ffb000;
+  --color-retro-red: #ff3333;
+  --color-retro-gray: #333333;
+
+  /* Force our font */
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+/* Global Styles */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: var(--color-retro-black);
+  --foreground: var(--color-retro-green);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-mono);
+  -webkit-font-smoothing: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-retro-black);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-retro-dim);
+  border: 1px solid var(--color-retro-green);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-retro-green);
+}
+
+/* Hide number input arrows */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
 }
