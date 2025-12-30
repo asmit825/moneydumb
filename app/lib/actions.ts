@@ -1,11 +1,11 @@
-'use server'
+'use server';
 
 import { sql } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-// --- AUTH ACTIONS ---
+// --- 1. AUTHENTICATION ---
 
 export async function registerUser(formData: FormData) {
   const username = formData.get('username') as string;
@@ -23,19 +23,25 @@ export async function registerUser(formData: FormData) {
   return { success: true };
 }
 
-export async function loginUser(formData: FormData) {
+export async function authenticate(formData: FormData) {
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
   const user = await sql`SELECT * FROM users WHERE username=${username}`;
-  if (user.rows.length === 0) return { message: 'User not found' };
+  if (user.rows.length === 0) return 'User not found';
 
   const match = await bcrypt.compare(password, user.rows[0].password_hash);
-  if (!match) return { message: 'Invalid credentials' };
+  if (!match) return 'Invalid credentials';
 
   const cookieStore = await cookies();
-  cookieStore.set('session', user.rows[0].id, { httpOnly: true, path: '/' });
-  return { success: true };
+  cookieStore.set('session', user.rows[0].id, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+    path: '/',
+  });
+  
+  redirect('/dashboard');
 }
 
 export async function logoutUser() {
@@ -44,12 +50,89 @@ export async function logoutUser() {
   redirect('/');
 }
 
-// --- DASHBOARD STATS (Consolidated Logic) ---
+// --- 2. SANDBOX / DEMO LOGIN ---
+
+export async function loginDemoUser() {
+  const cookieStore = await cookies();
+  
+  try {
+    // Check if demo user exists
+    let userResult = await sql`SELECT id FROM users WHERE username = 'demo_user'`;
+    let userId;
+
+    if (userResult.rows.length === 0) {
+      // A. Create User
+      const hashed = await bcrypt.hash('demo123', 10);
+      const newUser = await sql`
+        INSERT INTO users (username, password_hash) 
+        VALUES ('demo_user', ${hashed}) 
+        RETURNING id
+      `;
+      userId = newUser.rows[0].id;
+
+      // B. Create Dummy Banks
+      const chase = await sql`INSERT INTO banks (user_id, name, current_balance) VALUES (${userId}, 'Chase Checking', 4250.00) RETURNING id`;
+      const savings = await sql`INSERT INTO banks (user_id, name, current_balance) VALUES (${userId}, 'Amex Savings', 12000.00) RETURNING id`;
+      const bankId = chase.rows[0].id;
+
+      // C. Create Dummy Expense Types (Categories)
+      const typeRes = await sql`INSERT INTO expense_types (user_id, name) VALUES (${userId}, 'Subscriptions') RETURNING id`;
+      const typeId = typeRes.rows[0].id;
+      const typeRentRes = await sql`INSERT INTO expense_types (user_id, name) VALUES (${userId}, 'Housing') RETURNING id`;
+      const typeRentId = typeRentRes.rows[0].id;
+
+      // D. Create Dummy Expenses
+      // Pending
+      await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${typeId}, 'Netflix', 15.99, 'not-paid', ${new Date().toISOString()})`;
+      await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${typeRentId}, 'Rent', 1850.00, 'not-paid', ${new Date(Date.now() + 86400000 * 5).toISOString()})`; // 5 days out
+      // Completed
+      await sql`INSERT INTO expenses (user_id, bank_id, type_id, name, amount, status, due_date) VALUES (${userId}, ${bankId}, ${typeId}, 'Spotify', 10.99, 'completed', ${new Date().toISOString()})`;
+
+      // E. Create Dummy Inbound (Future Income)
+      // End of month date
+      const date = new Date();
+      const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      await sql`INSERT INTO inbounds (bank_id, amount, date, note) VALUES (${bankId}, 2500.00, ${lastDay.toISOString()}, 'Paycheck')`;
+
+    } else {
+      userId = userResult.rows[0].id;
+    }
+
+    // Create Session
+    cookieStore.set('session', userId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: '/',
+    });
+
+  } catch (error) {
+    console.error('Demo Login Error:', error);
+  }
+
+  redirect('/dashboard');
+}
+
+// --- 3. DASHBOARD STATS (Aggregated Data) ---
 
 export async function getDashboardStats() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('session')?.value;
-  if (!userId) return { totalAssets: 0, pendingOut: 0, safeBalance: 0, bankCount: 0, upcomingBills: [], banks: [], chartData: [], completion: { total: 0, completed: 0, percent: 0 }, coverage: { assets: 0, inbound: 0, expenses: 0, status: 'ok' } };
+  
+  // Default Return Structure
+  const emptyStats = { 
+    totalAssets: 0, 
+    pendingOut: 0, 
+    safeBalance: 0, 
+    bankCount: 0, 
+    upcomingBills: [], 
+    banks: [], 
+    chartData: [], 
+    completion: { total: 0, completed: 0, percent: 0 }, 
+    coverage: { assets: 0, inbound: 0, expenses: 0, status: 'ok' } 
+  };
+
+  if (!userId) return emptyStats;
 
   try {
     // 1. Assets (Bank Balances)
@@ -84,7 +167,7 @@ export async function getDashboardStats() {
     `;
     const monthlyInbound = Number(inboundResult.rows[0].total) || 0;
 
-    // 4. Banks List
+    // 4. Banks List (With Pending Breakdown)
     const banksResult = await sql`
       SELECT b.id, b.name, b.current_balance, COALESCE(SUM(e.amount), 0) as pending_total
       FROM banks b
@@ -95,7 +178,7 @@ export async function getDashboardStats() {
     `;
     const banks = banksResult.rows.map(b => ({ ...b, current_balance: Number(b.current_balance), pending_total: Number(b.pending_total) }));
 
-    // 5. Chart Data (Category Breakdown)
+    // 5. Chart Data (Category Breakdown - Current Month)
     const categoryResult = await sql`
       SELECT t.name, SUM(e.amount) as total
       FROM expenses e
@@ -106,7 +189,7 @@ export async function getDashboardStats() {
     `;
     const chartData = categoryResult.rows.map(c => ({ name: c.name, value: Number(c.total) }));
 
-    // 6. Completion Gauge
+    // 6. Completion Gauge (Current Month)
     const completionResult = await sql`
       SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'completed') as completed
       FROM expenses
@@ -138,23 +221,22 @@ export async function getDashboardStats() {
     return { 
       totalAssets, pendingOut, safeBalance, bankCount, upcomingBills, banks, chartData, 
       completion: { total: totalCount, completed: completedCount, percent },
-      coverage: { assets: totalAssets, inbound: monthlyInbound, expenses: pendingOut } // <--- NEW DATA
+      coverage: { assets: totalAssets, inbound: monthlyInbound, expenses: pendingOut } 
     };
 
   } catch (e) {
     console.error(e);
-    return { totalAssets: 0, pendingOut: 0, safeBalance: 0, bankCount: 0, upcomingBills: [], banks: [], chartData: [], completion: { total: 0, completed: 0, percent: 0 }, coverage: { assets: 0, inbound: 0, expenses: 0 } };
+    return emptyStats;
   }
 }
 
-// --- BANK ACTIONS ---
+// --- 4. BANK MANAGEMENT ---
 
 export async function getBanks() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('session')?.value;
   if (!userId) return [];
 
-  // Sum pending expenses (non-recurring only)
   const result = await sql`
     SELECT b.*, COALESCE(SUM(e.amount), 0) as pending_total
     FROM banks b
@@ -228,7 +310,7 @@ export async function updateBankBalance(formData: FormData) {
   redirect(`/dashboard/banks/${bankId}`);
 }
 
-// --- INBOUND ACTIONS ---
+// --- 5. INBOUND MANAGEMENT ---
 
 export async function getInbounds(bankId: string) {
   const result = await sql`SELECT * FROM inbounds WHERE bank_id=${bankId} ORDER BY date ASC`;
@@ -251,12 +333,11 @@ export async function deleteInbound(formData: FormData) {
   redirect(`/dashboard/banks/${bankId}`);
 }
 
-// --- EXPENSE ACTIONS (The Master Table) ---
+// --- 6. EXPENSE MANAGEMENT ---
 
 export async function getExpenses() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('session')?.value;
-  // Get ONLY non-recurring logs for the "Recent Activity" list
   const result = await sql`
     SELECT 
       e.id, e.amount, e.due_date as date, e.name as description, e.status,
@@ -274,7 +355,6 @@ export async function getExpenses() {
 export async function getRecurringExpenses() {
   const cookieStore = await cookies();
   const userId = cookieStore.get('session')?.value;
-  // Get ONLY recurring templates
   const result = await sql`
     SELECT 
       e.id, e.amount, e.due_day, e.name as description, 
@@ -297,10 +377,6 @@ export async function createExpense(formData: FormData) {
   const amount = parseFloat(formData.get('amount') as string);
   const name = formData.get('description') as string;
   const isRecurring = formData.get('isRecurring') === 'true';
-  
-  // Logic: 
-  // If Recurring -> We need 'dueDay' and status is likely ignored or 'template'
-  // If One-Off -> We need 'date' and 'status'
   
   try {
     if (isRecurring) {
@@ -336,7 +412,7 @@ export async function deleteExpense(formData: FormData) {
   }
 }
 
-// --- TYPES ACTIONS ---
+// --- 7. TYPE MANAGEMENT ---
 
 export async function getExpenseTypes() {
   const cookieStore = await cookies();

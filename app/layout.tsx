@@ -4,9 +4,8 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/600.css";
 
 export const metadata: Metadata = {
-  title: "SPENT",
-  description: "Mainframe Budget Tracking",
-  manifest: "/manifest.json",
+  title: 'MONEY_DUMB', // Change this
+  description: 'Financial Command Center',
 };
 
 export const viewport: Viewport = {
