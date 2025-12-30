@@ -118,7 +118,7 @@ export default async function Dashboard() {
           </div>
         </div>
 
-        {/* === COLUMN 3: COVERAGE MONITOR === */}
+        {/* === COLUMN 3: COVERAGE MONITOR  === */}
         <div className="space-y-6">
           <div className={`${CARD_HEIGHT_TOP} border border-retro-dim bg-retro-gray/5 p-4 md:p-6 hover:border-retro-green transition-colors group relative flex flex-col`}>
             <div className="flex justify-between items-start mb-4">
