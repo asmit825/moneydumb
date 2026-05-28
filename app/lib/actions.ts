@@ -31,32 +31,38 @@ export async function authenticate(formData: FormData) {
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
+  let userId: string | null = null;
+
   try {
     const userResult = await sql`SELECT * FROM users WHERE username = ${username}`;
     
-    // Fail silently or redirect to login on failure
     if (userResult.rows.length === 0) {
+      console.log('[Auth] User not found:', username);
       redirect('/');
     }
 
     const user = userResult.rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
+      console.log('[Auth] Password mismatch for:', username);
       redirect('/');
     }
+
+    userId = user.id;
 
     // Success: Establish secure HTTP-only Session Cookie
     const cookieStore = await cookies();
     cookieStore.set('session', user.id, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 1 week
       path: '/',
     });
 
-  } catch (e) {
-    // Next.js redirect mechanism relies on throwing a redirect error
-    if ((e as Error).message === 'NEXT_REDIRECT') {
+  } catch (e: any) {
+    // Next.js redirect() works by throwing — always re-throw it
+    if (e?.digest?.startsWith('NEXT_REDIRECT')) {
       throw e;
     }
     console.error('Authentication error:', e);

@@ -2,14 +2,12 @@
 /**
  * migrate-to-neon.mjs
  * 
- * Migrates all data from local SQLite (moneydumb.db) to Neon Postgres.
+ * Migrates all data from local SQLite (moneydumb.db) to Neon Postgres
+ * using raw SQL strings (no parameterized queries — safe for migration only).
  * 
  * Usage:
- *   POSTGRES_URL="postgres://user:pass@ep-xxx.neon.tech/moneydumb?sslmode=require" \
+ *   POSTGRES_URL="postgres://user:pass@ep-xxx.neon.tech/neondb?sslmode=require" \
  *   node scripts/migrate-to-neon.mjs
- * 
- * Prerequisites:
- *   npm install @neondatabase/serverless better-sqlite3
  */
 
 import Database from 'better-sqlite3';
@@ -20,7 +18,6 @@ import { resolve } from 'path';
 const POSTGRES_URL = process.env.POSTGRES_URL;
 if (!POSTGRES_URL) {
   console.error('❌ Missing POSTGRES_URL environment variable.');
-  console.error('   Usage: POSTGRES_URL="postgres://..." node scripts/migrate-to-neon.mjs');
   process.exit(1);
 }
 
@@ -60,6 +57,13 @@ function getColumns(tableName) {
   return info.map((col) => col.name);
 }
 
+function escapeValue(val) {
+  if (val === null || val === undefined) return 'NULL';
+  if (typeof val === 'number') return String(val);
+  // Escape single quotes by doubling them
+  return `'${String(val).replace(/'/g, "''")}'`;
+}
+
 async function migrateTable(tableName) {
   const rows = sqlite.prepare(`SELECT * FROM ${tableName}`).all();
   if (rows.length === 0) {
@@ -68,27 +72,18 @@ async function migrateTable(tableName) {
   }
 
   const columns = getColumns(tableName);
-  
-  // Insert rows one by one (safe for small datasets, handles conflicts)
+  const colNames = columns.map((c) => `"${c}"`).join(', ');
+
   let inserted = 0;
   for (const row of rows) {
-    const values = columns.map((col) => {
-      const val = row[col];
-      // Convert SQLite integer booleans to proper values
-      if (val === null || val === undefined) return null;
-      return val;
-    });
-
-    const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
-    const colNames = columns.map((c) => `"${c}"`).join(', ');
-    const query = `INSERT INTO ${tableName} (${colNames}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`;
+    const values = columns.map((col) => escapeValue(row[col])).join(', ');
+    const queryText = `INSERT INTO ${tableName} (${colNames}) VALUES (${values}) ON CONFLICT DO NOTHING`;
 
     try {
-      await sql(query, values);
+      await sql.unsafe(queryText);
       inserted++;
     } catch (err) {
-      console.error(`   ⚠️  Error inserting into ${tableName}:`, err.message);
-      console.error(`      Row:`, JSON.stringify(row).substring(0, 200));
+      console.error(`   ⚠️  ${tableName} error:`, err.message?.substring(0, 120));
     }
   }
 
@@ -111,8 +106,6 @@ async function main() {
   }
 
   console.log(`\n🎉 Migration complete! ${totalRows} total rows migrated.`);
-  console.log('   Verify in Neon SQL Editor: SELECT COUNT(*) FROM accounts;');
-
   sqlite.close();
 }
 
