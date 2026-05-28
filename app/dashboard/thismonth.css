@@ -1,0 +1,339 @@
+/* ============================================
+   BudgetFlow — ThisMonth Sandbox Styles
+   Minimalist Dark Design System
+   ============================================ */
+
+/* Summary flow bar */
+.tm-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px 24px;
+  overflow-x: auto;
+}
+.tm-summary-item {
+  flex: 1;
+  text-align: center;
+  min-width: 100px;
+}
+.tm-summary-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  letter-spacing: 0.025em;
+  margin-bottom: 4px;
+}
+.tm-summary-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.tm-summary-sub {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.tm-summary-arrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+.tm-summary-result {
+  background: var(--bg-surface);
+  padding: 12px 16px;
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r);
+  box-shadow: var(--glow-sm);
+}
+
+/* Budget Waterfall */
+.wf-container { padding: 8px 0; }
+.wf-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 1.2fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  transition: background 150ms var(--ease);
+  border-radius: var(--r);
+}
+.wf-row:hover { background: rgba(245, 158, 11, 0.03); }
+.wf-row-start {
+  padding-bottom: 14px;
+  border-bottom: 1px dashed var(--border);
+  margin-bottom: 4px;
+}
+.wf-row-result {
+  padding: 14px 16px;
+  background: var(--card-glass);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--r);
+  box-shadow: var(--glow-sm);
+}
+.wf-icon { font-size: 1.1rem; text-align: center; flex-shrink: 0; }
+.wf-label { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.wf-label-text { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+.wf-amount { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; font-weight: 600; }
+.wf-bar-col { display: flex; align-items: center; min-width: 0; }
+.wf-bar-track { width: 100%; height: 8px; background: var(--bg-highlight); border-radius: 4px; overflow: hidden; }
+.wf-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s var(--ease); }
+.wf-running { font-family: 'JetBrains Mono', monospace; text-align: right; white-space: nowrap; min-width: 90px; }
+.wf-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 8px 16px; }
+
+/* Account chips */
+.tm-accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+.tm-account-chip {
+  background: var(--card-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  transition: all 200ms var(--ease);
+}
+.tm-account-chip:hover { border-color: var(--border-hover); transform: scale(1.02); box-shadow: var(--shadow); }
+.tm-account-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.tm-account-type { font-size: 0.68rem; font-weight: 500; color: var(--text-dim); letter-spacing: 0.025em; margin-bottom: 6px; }
+.tm-account-balance { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.03em; }
+
+/* Item list rows */
+.tm-item-list { display: flex; flex-direction: column; gap: 1px; }
+.tm-item-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; transition: all 150ms var(--ease); border-bottom: 1px solid var(--border); border-radius: 0; }
+.tm-item-row:last-child { border-bottom: none; }
+.tm-item-row:hover { background: rgba(245, 158, 11, 0.03); }
+.tm-item-done { opacity: 0.55; }
+.tm-item-done:hover { opacity: 0.75; }
+
+/* Toggle button */
+.tm-toggle {
+  width: 28px; height: 28px;
+  border: 1px solid var(--text-dim);
+  border-radius: 6px;
+  background: transparent; color: var(--text-dim);
+  font-size: 0.75rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 200ms var(--ease); font-family: inherit;
+}
+.tm-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); transform: scale(1.05); }
+.tm-toggle-on { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+.tm-toggle-expense.tm-toggle-on { border-color: var(--teal); background: var(--teal-dim); color: var(--teal); }
+.tm-toggle-debt.tm-toggle-on { border-color: var(--teal); background: var(--teal-dim); color: var(--teal); }
+
+/* Item info */
+.tm-item-info { flex: 1; min-width: 0; }
+.tm-item-name { font-size: 0.88rem; font-weight: 500; color: var(--text-primary); transition: all 150ms var(--ease); }
+.tm-strikethrough { text-decoration: line-through; color: var(--text-dim) !important; }
+.tm-item-meta { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; letter-spacing: 0.01em; }
+.tm-dot { opacity: 0.35; }
+.tm-overdue { color: var(--rose); font-weight: 600; }
+
+/* Editable amount */
+.tm-item-amount { flex-shrink: 0; text-align: right; }
+.tm-editable { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; font-weight: 600; letter-spacing: -0.02em; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all 150ms var(--ease); }
+.tm-editable:hover { background: var(--bg-highlight); }
+.tm-edit-input { width: 90px; padding: 4px 8px; background: var(--bg-input); border: 1px solid var(--accent); border-radius: 6px; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; text-align: right; outline: none; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
+.tm-edit-input::-webkit-inner-spin-button,
+.tm-edit-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+/* Account select dropdown */
+.tm-acct-select { padding: 4px 8px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: var(--text-secondary); font-family: 'Inter', system-ui, sans-serif; font-size: 0.72rem; cursor: pointer; transition: all 150ms var(--ease); flex-shrink: 0; max-width: 110px; }
+.tm-acct-select:focus { outline: none; border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2); }
+.tm-acct-select:hover { border-color: var(--border-hover); }
+
+/* Account after-paid display */
+.tm-account-after { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px; }
+.tm-after-line { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; }
+.tm-after-line span:first-child { font-size: 0.68rem; font-weight: 500; color: var(--text-dim); letter-spacing: 0.025em; }
+.tm-after-line span:last-child { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; letter-spacing: -0.02em; }
+
+/* Debt controls */
+.tm-debt-controls { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; align-items: flex-end; }
+
+/* Payment tier pills */
+.tm-pay-tier { display: flex; gap: 2px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; }
+.tm-tier-btn { padding: 2px 8px; font-size: 0.65rem; font-weight: 500; background: transparent; color: var(--text-dim); border: none; cursor: pointer; transition: all 150ms var(--ease); letter-spacing: 0.02em; }
+.tm-tier-btn:hover { background: var(--bg-highlight); color: var(--text-primary); }
+.tm-tier-active { background: var(--amber-dim); color: var(--amber); }
+
+/* Layout */
+.tm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tm-half-card { min-width: 0; overflow: hidden; }
+.tm-half-card .tm-item-list { max-height: 560px; overflow-y: auto; }
+
+/* Sort & Filter */
+.tm-sort-btn { padding: 3px 10px; font-size: 0.7rem; font-weight: 500; background: var(--bg-highlight); color: var(--text-dim); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: all 150ms var(--ease); white-space: nowrap; letter-spacing: 0.01em; }
+.tm-sort-btn:hover { background: var(--bg-elevated); color: var(--accent); border-color: var(--border-hover); }
+.tm-filter-tabs { display: flex; gap: 2px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-highlight); }
+.tm-filter-tab { padding: 4px 12px; font-size: 0.7rem; font-weight: 500; background: transparent; color: var(--text-dim); border: none; cursor: pointer; transition: all 150ms var(--ease); letter-spacing: 0.01em; }
+.tm-filter-tab:hover { background: rgba(245, 158, 11, 0.04); color: var(--text-primary); }
+.tm-filter-active { background: var(--accent-dim); color: var(--accent); }
+
+/* Matrix table */
+.tm-matrix-scroll { overflow-x: auto; margin: 0 -4px; }
+.tm-matrix-table { width: 100%; border-collapse: collapse; }
+.tm-matrix-table th { text-align: left; padding: 8px 12px; font-size: 0.65rem; font-weight: 500; color: var(--text-muted); letter-spacing: 0.025em; border-bottom: 1px solid var(--border); white-space: nowrap; background: var(--bg-surface); position: sticky; top: 0; z-index: 1; }
+.tm-matrix-table td { padding: 10px 12px; font-size: 0.84rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: middle; }
+.tm-matrix-table tbody tr { transition: all 150ms var(--ease); }
+.tm-matrix-table tbody tr:hover td { background: rgba(245, 158, 11, 0.03); color: var(--text-primary); }
+.tm-matrix-table tbody tr:last-child td { border-bottom: none; }
+.tm-matrix-done { opacity: 0.5; }
+.tm-matrix-done:hover { opacity: 0.7; }
+
+/* Group header rows */
+.tm-matrix-top-group td { background: var(--bg-highlight); padding: 10px 12px; border-bottom: 1px solid var(--border); border-top: 1px solid var(--border); }
+.tm-matrix-sub-group td { background: rgba(245, 158, 11, 0.02); padding: 7px 12px; border-bottom: 1px solid var(--border); }
+.tm-matrix-item td { padding: 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+
+/* Type badges */
+.tm-type-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; font-size: 0.65rem; font-weight: 500; white-space: nowrap; letter-spacing: 0.01em; border-radius: var(--r-pill); }
+.tm-type-expense { background: var(--rose-dim); color: var(--rose); }
+.tm-type-debt { background: var(--amber-dim); color: var(--amber); }
+
+/* Matrix footer */
+.tm-matrix-footer { display: flex; align-items: center; gap: 20px; padding: 12px 12px 4px; border-top: 1px solid var(--border); margin-top: 4px; }
+.tm-matrix-stat { display: flex; flex-direction: column; gap: 1px; }
+.tm-matrix-stat-label { font-size: 0.62rem; font-weight: 500; color: var(--text-dim); letter-spacing: 0.025em; }
+.tm-matrix-stat-value { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; }
+
+/* Responsive overrides */
+@media (max-width: 1024px) {
+  .tm-summary-bar { flex-wrap: wrap; }
+  .tm-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  /* ---- Summary Bar ---- */
+  .tm-summary-bar {
+    flex-direction: column;
+    padding: 14px 12px;
+    gap: 4px;
+  }
+  .tm-summary-arrow { display: none; }
+  .tm-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    min-width: auto;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tm-summary-item:last-child { border-bottom: none; }
+  .tm-summary-label {
+    font-size: 0.65rem;
+    margin-bottom: 0;
+  }
+  .tm-summary-value {
+    font-size: 0.95rem;
+  }
+  .tm-summary-result {
+    padding: 10px 12px;
+  }
+
+  /* ---- Waterfall ---- */
+  .wf-row {
+    grid-template-columns: 28px 1fr auto;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .wf-bar-col { display: none; }
+  .wf-label-text { font-size: 0.78rem; }
+  .wf-amount { font-size: 0.72rem; }
+  .wf-running { min-width: 70px; font-size: 0.72rem; }
+  .wf-icon { font-size: 0.95rem; }
+  .wf-row-result { padding: 10px 12px; }
+
+  /* ---- Account Chips ---- */
+  .tm-accounts-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .tm-account-chip { padding: 10px 12px; }
+  .tm-account-name { font-size: 0.78rem; }
+  .tm-account-type { font-size: 0.62rem; }
+  .tm-account-balance { font-size: 0.9rem; }
+
+  /* ---- Layout ---- */
+  .tm-row { grid-template-columns: 1fr; }
+  .tm-half-card .tm-item-list { max-height: 400px; }
+
+  /* ---- Item Rows ---- */
+  .tm-item-row {
+    gap: 8px;
+    padding: 10px 8px;
+  }
+  .tm-item-name { font-size: 0.82rem; }
+  .tm-item-meta { font-size: 0.65rem; gap: 4px; }
+  .tm-editable { font-size: 0.82rem; padding: 4px 8px; }
+  .tm-edit-input { width: 80px; font-size: 0.78rem; padding: 6px 8px; }
+  .tm-toggle { width: 26px; height: 26px; font-size: 0.72rem; }
+
+  /* ---- Account Select ---- */
+  .tm-acct-select {
+    max-width: 90px;
+    font-size: 0.65rem;
+    padding: 3px 6px;
+  }
+
+  /* ---- Debt Controls ---- */
+  .tm-debt-controls { gap: 3px; }
+  .tm-pay-tier { border-radius: 5px; }
+  .tm-tier-btn { padding: 2px 6px; font-size: 0.6rem; }
+
+  /* ---- Filter + Sort Tabs ---- */
+  .tm-filter-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+  .tm-filter-tab { padding: 4px 10px; font-size: 0.65rem; white-space: nowrap; }
+  .tm-sort-btn { font-size: 0.65rem; padding: 3px 8px; }
+
+  /* ---- Matrix Table ---- */
+  .tm-matrix-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -8px;
+    padding: 0 8px;
+  }
+  .tm-matrix-table th { font-size: 0.6rem; padding: 6px 8px; white-space: nowrap; }
+  .tm-matrix-table td { font-size: 0.75rem; padding: 8px 8px; white-space: nowrap; }
+  .tm-type-badge { font-size: 0.6rem; padding: 2px 6px; }
+
+  /* ---- Matrix Footer ---- */
+  .tm-matrix-footer {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 10px 8px 4px;
+  }
+  .tm-matrix-stat-label { font-size: 0.58rem; }
+  .tm-matrix-stat-value { font-size: 0.75rem; }
+
+  /* ---- Account After-paid ---- */
+  .tm-account-after { padding-top: 6px; margin-top: 6px; }
+  .tm-after-line { font-size: 0.65rem; }
+  .tm-after-line span:first-child { font-size: 0.6rem; }
+  .tm-after-line span:last-child { font-size: 0.7rem; }
+}
+
+/* Extra small screens */
+@media (max-width: 400px) {
+  .tm-accounts-grid {
+    grid-template-columns: 1fr;
+  }
+  .tm-summary-value { font-size: 0.85rem; }
+  .wf-row { grid-template-columns: 1fr auto; }
+  .wf-icon { display: none; }
+}

@@ -1,0 +1,142 @@
+/* ============================================
+   BudgetFlow — Base Styles
+   Minimalist Dark Design System
+   ============================================ */
+
+/* ========== DESIGN TOKENS ========== */
+:root {
+  /* Layered slate palette — atmospheric dark */
+  --bg-base: #0A0A0F;
+  --bg-elevated: #12121A;
+  --bg-surface: #1A1A24;
+  --bg-surface-hover: #22222E;
+  --bg-highlight: #2A2A36;
+  --bg-input: #12121A;
+
+  /* Text — warm whites and cool grays */
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #71717A;
+  --text-dim: #52525B;
+
+  /* Amber accent — warm, glowing */
+  --accent: #F59E0B;
+  --accent-dim: rgba(245, 158, 11, 0.15);
+  --accent-hover: #FBBF24;
+  --accent-muted: rgba(245, 158, 11, 0.10);
+
+  /* Semantic colors */
+  --teal: #2dd4bf;
+  --teal-dim: rgba(45, 212, 191, 0.12);
+  --blue: #60a5fa;
+  --blue-dim: rgba(96, 165, 250, 0.12);
+  --amber: #F59E0B;
+  --amber-dim: rgba(245, 158, 11, 0.12);
+  --rose: #fb7185;
+  --rose-dim: rgba(251, 113, 133, 0.12);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167, 139, 250, 0.12);
+  --emerald: #34d399;
+  --emerald-dim: rgba(52, 211, 153, 0.12);
+
+  /* Borders — very subtle */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-accent: rgba(245, 158, 11, 0.25);
+
+  /* Radius — soft, rounded */
+  --r: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-pill: 9999px;
+
+  /* Glass card */
+  --card-glass: rgba(26, 26, 36, 0.6);
+  --card-glass-hover: rgba(26, 26, 36, 0.8);
+
+  /* Amber glow shadows */
+  --glow-sm: 0 0 20px rgba(245, 158, 11, 0.15);
+  --glow-md: 0 0 40px rgba(245, 158, 11, 0.2);
+  --glow-lg: 0 0 60px rgba(245, 158, 11, 0.25);
+  --border-glow: 0 0 0 1px rgba(245, 158, 11, 0.3), 0 0 20px rgba(245, 158, 11, 0.15);
+
+  /* Standard shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4);
+
+  /* Transitions */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========== RESET ========== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Custom Scrollbar — Minimal Dark */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb {
+  background: var(--bg-highlight);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ========== KEYFRAME ANIMATIONS ========== */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.96); }
+}
+@keyframes ambientFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(10px, -10px) scale(1.02); }
+  66% { transform: translate(-5px, 5px) scale(0.98); }
+}
+
+.fade-in { animation: fadeIn 0.25s var(--ease); }
+
+/* ========== AMBIENT ORBS — Atmospheric Background ========== */
+.ambient-orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  animation: ambientFloat 20s ease-in-out infinite;
+}
+.ambient-orb-1 {
+  top: -150px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.04) 0%, transparent 70%);
+  filter: blur(100px);
+}
+.ambient-orb-2 {
+  bottom: -200px;
+  right: -100px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.03) 0%, transparent 70%);
+  filter: blur(120px);
+  animation-delay: -7s;
+}
+
+/* ========== REDUCED MOTION ========== */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-orb {
+    animation: none;
+  }
+  body::after {
+    animation: none;
+  }
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
